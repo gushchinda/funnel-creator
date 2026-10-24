@@ -5,6 +5,12 @@ at most five numbered questions, each with a default the user can accept with "o
 reference (plan structure, currency, language, timer, guarantee). Questions marked ● block the build; ○ can arrive
 later: build with a placeholder and list them as open in the report. Skip any question the user already answered.
 
+**Accounts the user does not have yet.** In Blocks B and C first ask *which* of these the user already has:
+Google Cloud project with a service-account key, Stripe or Paddle test keys, Meta Pixel with a CAPI token, fal.ai
+key. For everything they lack, or if they ask, switch to `references/setup-guide.md` and walk them through it one
+account at a time before continuing. Keep working on the parts that do not need the missing keys meanwhile
+(capture, config, developer spec, front end).
+
 ## Block A — what to clone (send together with the screen sheet)
 
 1. ● Anything missing from the screens? Clone 1:1, or skip / add / reorder steps? (Default: 1:1.)

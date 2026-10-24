@@ -51,7 +51,8 @@ The skill is a guided dialogue. The user should never face a wall of questions b
 3. **Then the questions, one block per message**, in the order of `references/first-run.md`. At most five
    questions per message, numbered, each with a default the user can accept by answering "ok". Pre-fill defaults
    from what the reference showed (plan structure, currency, language, timer). Wait for the answer before the
-   next block.
+   next block. When the user lacks an account or key (Google Cloud, Stripe/Paddle, Meta Pixel, fal.ai), guide
+   them through creating it step by step with `references/setup-guide.md`, then verify each key.
 4. **Plan for approval.** Before writing code, show the clone plan: a table of steps (reference step → clone
    step → what changes), the paywall, the pixel events. Build only after the user says go.
 5. **Build, test deploy, hand-off** as in the phase table. After the test deploy, send the link and ask the user
@@ -129,6 +130,7 @@ step by step (`references/handoff.md`).
 SKILL.md                         this file
 references/
   first-run.md                   questions, config schema, where secrets go
+  setup-guide.md                 step-by-step help to create Google Cloud, Stripe/Paddle, Meta, fal.ai keys
   reference-capture.md           walking the reference funnel, what to record
   build.md                       front end and server structure, design matching, images, variants
   stripe.md                      products, intro prices, Payment Element flow, webhook

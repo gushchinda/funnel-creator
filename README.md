@@ -57,6 +57,9 @@ Keys go into environment variables or a gitignored `.env`, never into chat or th
 - `gcloud` CLI with access to a Google Cloud project (Cloud Run, Cloud Build, Artifact Registry)
 - A Stripe or Paddle account, a Meta Pixel, optionally a fal.ai key
 
+No accounts yet? Just say so: the skill walks you through creating each one, click by click, and checks every key
+before it uses it.
+
 ## Layout
 
 ```

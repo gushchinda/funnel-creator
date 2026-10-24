@@ -52,6 +52,6 @@ On a 375×812 viewport, from the landing URL with `?utm_source=test`:
 - the provider shows the customer and subscription with funnel metadata;
 - `GET /v1/subscription?email=<test email>` returns `has_access: true`; `/v1/me` works with the token from the
   thank-you link; `/manage/<token>` opens the provider page;
-- `/healthz` is `ok`; logs show no errors.
+- `/health` is `ok` (not `/healthz`: run.app answers that path itself with a 404); logs show no errors.
 
 Save clone screenshots of every step to `report/clone/` during this pass.

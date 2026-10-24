@@ -86,7 +86,7 @@ scripts write. The server:
 - `POST /api/checkout` → signed pay token, CAPI `InitiateCheckout`, returns the pay page URL;
 - Stripe or Paddle routes and webhook (chosen by `PAYMENT_PROVIDER`);
 - `/v1/*` subscription API for the app;
-- `/healthz`.
+- `/health` (also `/healthz`, which run.app swallows at its front end).
 
 Do not add a database unless the funnel needs one: subscription state is read from the payment provider, and
 quiz answers are logged as structured JSON (Cloud Logging) and attached to the provider's metadata.

@@ -42,6 +42,28 @@ Run instances racing on the same purchase can, rarely, send twice; acceptable, a
 Failures never block the purchase: they log `{"kind":"email_error"}` and the buyer still lands on the
 thank-you step. Success logs `{"kind":"email_sent"}`.
 
+## Test send before any purchase
+
+As soon as the key is in place, send one email to the user's own address and ask them to check the inbox and the
+spam folder:
+
+```bash
+node scripts/send_test_email.mjs <funnel-folder> <user's email> [plan-id]
+```
+
+- Without a verified domain use `EMAIL_FROM="App <onboarding@resend.dev>"`; Resend then delivers only to the
+  email the Resend account was registered with. Ask the user which address that is.
+- If the sandbox cannot reach the provider's API (`api.resend.com` and the like are often blocked), run the script
+  in Cloud Build with the key from Secret Manager as `secretEnv`, the same way as the other key checks.
+- The test uses a throwaway token: Open falls back to the store, Manage says "Link expired". Tell the user so.
+
+The key belongs in Secret Manager (`gcp.secrets: {"EMAIL_API_KEY": "<slug>-email-api-key"}`). A new secret is
+readable only by accounts given `roles/secretmanager.secretAccessor` on it: the Cloud Run runtime account (by
+default `<project-number>-compute@developer.gserviceaccount.com`) and, for Cloud Build checks,
+`<project-number>@cloudbuild.gserviceaccount.com`. Granting it is an IAM change: ask the user first.
+
+If the user pasted the key into chat, use it, never repeat it, and suggest rotating it after testing.
+
 ## Verify (phase 8)
 
 1. Deploy with `EMAIL_PROVIDER`, `EMAIL_API_KEY`, `EMAIL_FROM`, `BASE_URL`.
@@ -49,5 +71,7 @@ thank-you step. Success logs `{"kind":"email_sent"}`.
 3. Check the log line `email_sent`, the email in the inbox (not spam), and both buttons: Open (on a phone) and
    Manage (opens the Billing Portal).
 4. Put a screenshot of the email in the report.
+
+Before the deploy, check the key with `scripts/send_test_email.mjs` (above).
 
 Turning it off: leave `EMAIL_PROVIDER` empty.

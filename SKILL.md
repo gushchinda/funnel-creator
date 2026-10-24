@@ -179,5 +179,6 @@ scripts/
   setup_paddle.mjs               create products, prices, discounts, notification destination
   deploy.sh                      Cloud Run deploy of one or more funnel folders
   setup_analytics.sh             BigQuery dataset + log sink + roles for funnel analytics (once per project)
+  send_test_email.mjs            send the welcome email once, without a purchase, to check key, sender and layout
   check_secrets.sh               refuse to commit or share anything that looks like a key
 ```

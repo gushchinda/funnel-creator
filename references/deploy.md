@@ -44,7 +44,10 @@ For each folder it builds from source (`gcloud run deploy <service> --source <fo
 3. Update `funnel.config.json → status.test_url` and the developer spec's test base URL.
 4. Set `BASE_URL` to the service URL (the domain later) and redeploy: the welcome email's Open and Manage links
    need it (`references/email.md`). Put `EMAIL_API_KEY` and the service key (`ADAPTY_SECRET_KEY` /
-   `REVENUECAT_STRIPE_PUBLIC_KEY`) in Secret Manager via `gcp.secrets`.
+   `REVENUECAT_STRIPE_PUBLIC_KEY`) in Secret Manager via `gcp.secrets`. Every new secret needs
+   `roles/secretmanager.secretAccessor` for the Cloud Run runtime account (and the Cloud Build account if checks
+   run there), granted per secret after the user agrees; otherwise the deploy or build fails with
+   `secretmanager.versions.access denied`.
 
 ## Smoke test (all must pass)
 

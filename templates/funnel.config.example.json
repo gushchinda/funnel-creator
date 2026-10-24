@@ -90,7 +90,15 @@
   "app": {
     "identity": "email",
     "has_backend": true,
-    "developer_contact": ""
+    "developer_contact": "",
+    "service": "adapty",
+    "user_id_from": "uid",
+    "service_env": "ADAPTY_SECRET_KEY"
+  },
+  "email": {
+    "provider": "resend",
+    "from": "Acme Sleep <hello@acmesleep.com>",
+    "env": "EMAIL_API_KEY"
   },
   "status": {
     "phase": 0,

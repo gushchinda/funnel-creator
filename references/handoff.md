@@ -56,6 +56,8 @@ them or their client. Then update `funnel.config.json → status`.
 - [ ] Payments: test purchase, 3-D Secure, webhook received, metadata correct
 - [ ] Pixel + CAPI: `CompleteRegistration` and `Purchase` deduplicated in Test events
 - [ ] Subscription API: `has_access: true` for the test buyer; developer spec sent
+- [ ] Welcome email received for the test purchase, screenshot in the report; sender domain verified (or open item)
+- [ ] Subscription service (Adapty / RevenueCat / Apphud): test purchase on the right profile, or "none" recorded
 - [ ] Test deploy on Cloud Run passed the smoke test
 - [ ] Domain instructions delivered
 - [ ] Open items listed with owners

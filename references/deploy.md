@@ -42,6 +42,9 @@ For each folder it builds from source (`gcloud run deploy <service> --source <fo
    …`), put the secret in env, redeploy.
 2. Stripe: register the `run.app` host in Payment method domains so wallets show up.
 3. Update `funnel.config.json → status.test_url` and the developer spec's test base URL.
+4. Set `BASE_URL` to the service URL (the domain later) and redeploy: the welcome email's Open and Manage links
+   need it (`references/email.md`). Put `EMAIL_API_KEY` and the service key (`ADAPTY_SECRET_KEY` /
+   `REVENUECAT_STRIPE_PUBLIC_KEY`) in Secret Manager via `gcp.secrets`.
 
 ## Smoke test (all must pass)
 
@@ -54,6 +57,10 @@ On a 375×812 viewport, from the landing URL with `?utm_source=test`:
 - the provider shows the customer and subscription with funnel metadata;
 - `GET /v1/subscription?email=<test email>` returns `has_access: true`; `/v1/me` works with the token from the
   thank-you link; `/manage/<token>` opens the provider page;
+- the welcome email arrives (log `email_sent`), its Open button reaches `/open/<token>` and its Manage link opens
+  the provider page (`references/email.md`);
+- with a subscription service: log `app_service_synced` and the purchase on the user's profile in the service
+  dashboard (`references/app-services.md`);
 - `/analytics` asks for a password and, after a walk with `?utm_source=qa_check`, shows those sessions step by step;
 - `/health` is `ok` (not `/healthz`: run.app answers that path itself with a 404); logs show no errors.
 

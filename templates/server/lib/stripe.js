@@ -10,7 +10,7 @@ const STATUS = {
 const iso = (s) => (s ? new Date(s * 1000).toISOString() : null);
 
 export function stripeProvider(ctx) {
-  const { env, plans, currency, source, funnel, capi, pay, success, meta, notify, track } = ctx;
+  const { env, plans, currency, source, funnel, capi, pay, success, meta, notify, track, purchased } = ctx;
   if (!env.STRIPE_SECRET_KEY) throw new Error("STRIPE_SECRET_KEY is required");
   const stripe = new Stripe(env.STRIPE_SECRET_KEY);
   const subsByToken = new Map(); // retries reuse the incomplete subscription instead of stacking new ones
@@ -35,6 +35,15 @@ export function stripeProvider(ctx) {
     };
   }
 
+  // Welcome email + app service hand-off once per subscription; metadata.onboarded stops repeats across instances.
+  function onboard(sub, email) {
+    if (sub.metadata?.onboarded) return;
+    const m = sub.metadata;
+    purchased({ provider: "stripe", order: sub.id, subscriptionId: sub.id, customerId: sub.customer, email, uid: m.uid, plan: m.plan })
+      .then(() => stripe.subscriptions.update(sub.id, { metadata: { onboarded: "1" } }))
+      .catch((e) => console.error(JSON.stringify({ kind: "onboard_error", sub: sub.id, error: e.message })));
+  }
+
   async function finish(tok, subId) {
     // The invoice turns paid a moment after the PaymentIntent succeeds.
     let sub, paid = false;
@@ -56,6 +65,7 @@ export function stripeProvider(ctx) {
     });
     console.log(JSON.stringify({ kind: "purchase", provider: "stripe", sub: sub.id, plan: tok.plan, amount: inv.amount_paid, funnel: m.funnel, via: "complete" }));
     track("purchase", { session: m.funnel_session, plan: tok.plan, amount: inv.amount_paid, currency: inv.currency, order: sub.id });
+    onboard(sub, tok.email);
     return {
       paid: true,
       redirect: success({
@@ -169,6 +179,7 @@ export function stripeProvider(ctx) {
         });
         console.log(JSON.stringify({ kind: "purchase", provider: "stripe", sub: sub.id, plan: m.plan, amount: o.amount_paid, funnel: m.funnel }));
         track("purchase", { session: m.funnel_session, plan: m.plan, amount: o.amount_paid, currency: o.currency, order: sub.id });
+        onboard(sub, o.customer_email);
       }
       return notify(sub.customer, o.customer_email);
     }

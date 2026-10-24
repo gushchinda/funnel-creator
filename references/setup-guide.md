@@ -95,6 +95,29 @@ Verify: `curl -s "https://graph.facebook.com/v21.0/$META_PIXEL_ID?fields=id,name
 Verify: `curl -s -o /dev/null -w '%{http_code}' https://queue.fal.run/fal-ai/flux/schnell -H "Authorization: Key $FAL_KEY" -H 'Content-Type: application/json' -d '{"prompt":"test"}'`
 → `200`. `401` means the key is cut or wrong.
 
+## 4a. Email service (welcome email)
+
+Resend is the default (`references/email.md`):
+1. Sign up at resend.com → **Domains** → **Add domain** → the user's domain (or a subdomain such as
+   `mail.acmesleep.com`) → add the DNS records it shows (SPF, DKIM) at the domain registrar → **Verify**.
+   Until then only the test sender works and mail goes only to the account's own address.
+2. **API keys** → **Create API key**, permission **Sending access**, domain: that domain → copy it once into
+   `EMAIL_API_KEY`. Set `EMAIL_PROVIDER=resend` and `EMAIL_FROM="App <hello@that-domain>"`.
+
+Postmark: Server → API Tokens (`EMAIL_PROVIDER=postmark`), Sender Signatures → domain. SendGrid: Settings → API
+Keys with Mail Send (`EMAIL_PROVIDER=sendgrid`), Sender Authentication → domain.
+
+Verify: a full-access Resend key answers `200` to
+`curl -s -o /dev/null -w '%{http_code}' https://api.resend.com/domains -H "Authorization: Bearer $EMAIL_API_KEY"`.
+A sending-only key cannot list domains; check it with the test purchase in phase 8 (log line `email_sent`).
+
+## 4b. Subscription service keys
+
+Only if the app uses one (`references/app-services.md`): Adapty → App settings → General → API keys → **secret**
+key into `ADAPTY_SECRET_KEY`; RevenueCat → project → Apps → the Stripe app → **public API key** into
+`REVENUECAT_STRIPE_PUBLIC_KEY`; Apphud needs no key in the funnel. The dashboard steps that connect Stripe to the
+service are done by the user in their account; walk them through them.
+
 ## 5. Putting the values in
 
 Tell the user where, depending on where the skill runs:
@@ -118,6 +141,10 @@ META_PIXEL_ID=
 META_CAPI_TOKEN=
 META_TEST_EVENT_CODE=
 FAL_KEY=                # optional
+EMAIL_PROVIDER=resend
+EMAIL_API_KEY=          # re_…
+EMAIL_FROM=             # App <hello@your-domain>
+ADAPTY_SECRET_KEY=      # only with Adapty (or REVENUECAT_STRIPE_PUBLIC_KEY with RevenueCat)
 ```
 
 Record the project ID, region and the variable **names** in `funnel.config.json`, then run all the checks and

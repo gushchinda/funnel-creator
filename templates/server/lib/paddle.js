@@ -6,7 +6,7 @@ import express from "express";
 const STATUS = { active: "active", trialing: "trialing", past_due: "past_due", paused: "paused", canceled: "canceled" };
 
 export function paddleProvider(ctx) {
-  const { env, plans, source, funnel, capi, pay, success, meta, notify, track } = ctx;
+  const { env, plans, source, funnel, capi, pay, success, meta, notify, track, purchased } = ctx;
   if (!env.PADDLE_API_KEY || !env.PADDLE_CLIENT_TOKEN) throw new Error("PADDLE_API_KEY and PADDLE_CLIENT_TOKEN are required");
   const sandbox = env.PADDLE_ENV !== "production";
   const BASE = sandbox ? "https://sandbox-api.paddle.com" : "https://api.paddle.com";
@@ -77,6 +77,7 @@ export function paddleProvider(ctx) {
           paid = ["paid", "completed"].includes(txn.status);
         }
         if (!paid) return res.json({ paid: false });
+        purchased({ provider: "paddle", order: txn.subscription_id || txn.id, subscriptionId: txn.subscription_id, customerId: txn.customer_id, email: tok.email, uid: tok.uid, plan: tok.plan });
         res.json({
           paid: true,
           redirect: success({
@@ -120,6 +121,7 @@ export function paddleProvider(ctx) {
         });
         console.log(JSON.stringify({ kind: "purchase", provider: "paddle", txn: d.id, sub: d.subscription_id, plan: m.plan, funnel: m.funnel }));
         track("purchase", { session: m.funnel_session, plan: m.plan, amount: Number(d.details.totals.total), currency: d.currency_code, order: d.subscription_id });
+        purchased({ provider: "paddle", order: d.subscription_id, subscriptionId: d.subscription_id, customerId: d.customer_id, email: customer.email, uid: m.uid, plan: m.plan });
       }
       return notify(d.customer_id, customer.email);
     }

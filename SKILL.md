@@ -1,6 +1,6 @@
 ---
 name: funnel-cloner
-description: Clone a reference web-to-app subscription funnel (quiz, onboarding, paywall) step by step and design for design, take payments with Stripe or Paddle, send Meta Pixel + Conversions API events, expose a subscription-status API for the mobile app, track every step in a built-in analytics dashboard, and deploy to Google Cloud Run. Works as a guided dialogue that starts by capturing and showing the competitor's funnel. Use when someone asks to copy, clone, rebuild or "make a funnel like" an existing quiz or paywall funnel.
+description: Clone a reference web-to-app subscription funnel (quiz, onboarding, paywall) step by step and design for design, take payments with Stripe or Paddle, send Meta Pixel + Conversions API events, send a welcome email after purchase, hand purchases to the app's subscription service (Adapty, RevenueCat, Apphud), expose a subscription-status API for the mobile app, track every step in a built-in analytics dashboard, and deploy to Google Cloud Run. Works as a guided dialogue that starts by capturing and showing the competitor's funnel. Use when someone asks to copy, clone, rebuild or "make a funnel like" an existing quiz or paywall funnel.
 ---
 
 # Funnel cloner
@@ -13,6 +13,10 @@ Cloud Run, with:
 - payments through **Stripe** (on-site Payment Element) or **Paddle** (Paddle.js inline checkout);
 - **Meta Pixel + Conversions API**: `CompleteRegistration` and `Purchase` (plus `InitiateCheckout`), browser and
   server with a shared `event_id` so Meta deduplicates them;
+- a **welcome email** after the first payment (Resend, Postmark or SendGrid) with an "Open the app" button,
+  the plan, and a manage-subscription link;
+- the purchase handed to the app's **subscription service** (Adapty, RevenueCat or Apphud) on the right user, so
+  the app unlocks through its usual SDK check;
 - a **subscription status API** the mobile app calls to unlock access, and a spec for the app developer;
 - **funnel analytics**: every step, email, checkout and purchase per session, in BigQuery, with a
   password-protected dashboard at `/analytics` (conversion by step, plan and traffic source);
@@ -36,8 +40,8 @@ Run the phases in order. Each phase has a reference file; read it when you reach
 | 4 | Build the clone | `references/build.md` | `<funnel>/web/`, `<funnel>/server/` from `templates/` |
 | 5 | Payments | `references/stripe.md` or `references/paddle.md` | products/prices, checkout, webhook |
 | 6 | Pixel + CAPI | `references/meta-capi.md` | events verified in Test Events |
-| 7 | Subscription API + app spec | `references/subscription-api.md` | `/v1/*` endpoints, `<funnel>/docs/developer-spec.md` |
-| 8 | Test deploy to Cloud Run + analytics | `references/deploy.md`, `references/analytics.md` | live test URL, smoke test passed, `/analytics` shows the test walk |
+| 7 | Subscription API, app service, welcome email, app spec | `references/subscription-api.md`, `references/app-services.md`, `references/email.md` | `/v1/*` endpoints, service hand-off, welcome email, `<funnel>/docs/developer-spec.md` |
+| 8 | Test deploy to Cloud Run + analytics | `references/deploy.md`, `references/analytics.md` | live test URL, smoke test passed (welcome email received, purchase in the app's service), `/analytics` shows the test walk |
 | 9 | Hand-off | `references/handoff.md` | report with screenshots, domain instructions |
 
 Keep a checklist of these phases visible to the user and update it as you go.
@@ -123,6 +127,12 @@ browser and server, same `event_id`. Details and verification in `references/met
 **Never in git, reports or chat:** API keys, webhook secrets, CAPI tokens, service account keys, admin passwords,
 customer emails. Run `scripts/check_secrets.sh <funnel>` before every commit and before sharing a report.
 
+**After the purchase.** Every funnel sends the welcome email (`references/email.md`) unless the user turns it off,
+and always asks which subscription service the app uses (Adapty, RevenueCat, Apphud, other, own backend). With a
+service, the purchase must land on the same user id the app gives that service's SDK (`references/app-services.md`).
+Connecting Stripe inside the service (its app or webhook) creates objects in the user's Stripe account: the user
+does it, or approves it first.
+
 **Analytics.** Every funnel tracks every step (`FunnelBridge.track`) and ships the `/analytics` dashboard. Run
 `scripts/setup_analytics.sh` once per Google Cloud project and keep the dashboard password in Secret Manager.
 Hand the user the dashboard link with the test deploy.
@@ -139,13 +149,15 @@ step by step (`references/handoff.md`).
 SKILL.md                         this file
 references/
   first-run.md                   questions, config schema, where secrets go
-  setup-guide.md                 step-by-step help to create Google Cloud, Stripe/Paddle, Meta, fal.ai keys
+  setup-guide.md                 step-by-step help to create Google Cloud, Stripe/Paddle, Meta, fal.ai, email keys
   reference-capture.md           walking the reference funnel, what to record
   build.md                       front end and server structure, design matching, images, variants
   stripe.md                      products, intro prices, Payment Element flow, webhook
   paddle.md                      products, intro discounts, Paddle.js inline checkout, webhook
   meta-capi.md                   events, dedup, user_data, Test Events check
   subscription-api.md            endpoints, access rules, linking purchases to app users
+  app-services.md                Adapty / RevenueCat / Apphud: user id, metadata, server call, dashboard steps
+  email.md                       welcome email: provider, sender domain, contents, once-only sending
   deploy.md                      Cloud Run deploy, env and secrets, smoke test
   analytics.md                   funnel events, BigQuery sink, /analytics dashboard
   handoff.md                     report, screenshots, domain instructions, final checklist
@@ -154,7 +166,8 @@ templates/
   env.example
   developer-spec.md              spec for the app developer (filled per funnel)
   domain-instructions.md         domain mapping guide for the client
-  server/                        Express server: payments, CAPI, subscription API, analytics + dashboard
+  server/                        Express server: payments, CAPI, subscription API, analytics + dashboard,
+                                 welcome email (lib/email.js, emails/), app service hand-off (lib/app-service.js)
   web/funnel-bridge.js           session, pixel events, checkout start (include in every page)
   web/pay-stripe.html            on-site Stripe payment page
   web/pay-paddle.html            Paddle inline checkout page

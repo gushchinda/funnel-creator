@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Welcome to {{app}}</title>
+</head>
+<!-- Welcome email. Restyle per funnel: brand colour (#2f5d50 below), logo, copy in the funnel's language.
+     Placeholders: {{app}} {{plan}} {{terms}} {{open_url}} {{ios_url}} {{android_url}} {{manage_url}} {{email}}
+     {{support}} {{terms_url}}; {{#key}}…{{/key}} keeps a block only when key is set. Inline styles only. -->
+<body style="margin:0;padding:0;background:#f4f3ef;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#22201c;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f3ef;">
+  <tr><td align="center" style="padding:32px 16px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;">
+      <tr><td style="padding:32px 28px 8px;">
+        <p style="margin:0 0 4px;font-size:14px;color:#77716a;">{{app}}</p>
+        <h1 style="margin:0 0 16px;font-size:26px;line-height:1.25;">Your plan is active</h1>
+        <p style="margin:0 0 20px;font-size:16px;line-height:1.5;">Thank you for joining {{app}}. Your personal plan is ready in the app. Sign in with <b>{{email}}</b> to unlock it.</p>
+      </td></tr>
+      {{#open_url}}<tr><td style="padding:0 28px 8px;">
+        <a href="{{open_url}}" style="display:block;background:#2f5d50;color:#ffffff;text-align:center;text-decoration:none;font-size:17px;font-weight:600;padding:16px;border-radius:12px;">Open {{app}}</a>
+      </td></tr>{{/open_url}}
+      <tr><td style="padding:12px 28px 4px;font-size:14px;line-height:1.5;color:#77716a;">
+        Don't have the app yet?
+        {{#ios_url}}<a href="{{ios_url}}" style="color:#2f5d50;">App Store</a>{{/ios_url}}
+        {{#android_url}} · <a href="{{android_url}}" style="color:#2f5d50;">Google Play</a>{{/android_url}}
+      </td></tr>
+      <tr><td style="padding:20px 28px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f6f3;border-radius:12px;">
+          <tr><td style="padding:16px 18px;font-size:14px;line-height:1.5;">
+            <b>{{plan}}</b><br>
+            <span style="color:#77716a;">{{terms}}</span>
+          </td></tr>
+        </table>
+      </td></tr>
+      <tr><td style="padding:0 28px 28px;font-size:13px;line-height:1.6;color:#77716a;">
+        {{#manage_url}}You can cancel or change your subscription at any time: <a href="{{manage_url}}" style="color:#2f5d50;">manage subscription</a>.<br>{{/manage_url}}
+        {{#support}}Questions? Write to <a href="mailto:{{support}}" style="color:#2f5d50;">{{support}}</a>.<br>{{/support}}
+        {{#terms_url}}<a href="{{terms_url}}" style="color:#77716a;">Subscription terms</a>{{/terms_url}}
+      </td></tr>
+    </table>
+    <p style="margin:16px 0 0;font-size:12px;color:#9a978f;">You received this email because you bought a {{app}} plan with this address.</p>
+  </td></tr>
+</table>
+</body>
+</html>

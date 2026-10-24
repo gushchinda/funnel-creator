@@ -16,6 +16,10 @@ PATTERNS=(
   '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY'  # any private key
   'AIza[0-9A-Za-z_-]{35}'                      # Google API key
   '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{32}'  # fal.ai key
+  're_[0-9A-Za-z]{8,}_[0-9A-Za-z]{16,}'         # Resend API key
+  'SG\.[0-9A-Za-z_-]{16,}\.[0-9A-Za-z_-]{16,}'    # SendGrid API key
+  'secret_live_[0-9A-Za-z._-]{20,}'            # Adapty secret key
+  'sk_[0-9A-Za-z]{26,}'                        # RevenueCat secret key
 )
 
 found=0

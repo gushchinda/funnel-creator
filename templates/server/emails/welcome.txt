@@ -1,0 +1,14 @@
+Your {{app}} plan is active
+
+Thank you for joining {{app}}. Your personal plan is ready in the app. Sign in with {{email}} to unlock it.
+{{#open_url}}
+Open {{app}}: {{open_url}}
+{{/open_url}}{{#ios_url}}App Store: {{ios_url}}
+{{/ios_url}}{{#android_url}}Google Play: {{android_url}}
+{{/android_url}}
+{{plan}}
+{{terms}}
+{{#manage_url}}
+Manage or cancel your subscription: {{manage_url}}
+{{/manage_url}}{{#support}}Questions? {{support}}
+{{/support}}

@@ -5,6 +5,7 @@
   "engines": { "node": ">=22" },
   "scripts": { "start": "node server.js", "dev": "node --env-file=../.env --watch server.js" },
   "dependencies": {
+    "@google-cloud/bigquery": "^8.1.0",
     "express": "^5.1.0",
     "stripe": "^18.0.0"
   }

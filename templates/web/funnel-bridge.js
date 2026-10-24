@@ -5,6 +5,7 @@
 //   FunnelBridge.checkout(plan, email)     paywall CTA pressed   -> InitiateCheckout, then go to /pay/<token>
 //   (automatic) ?paid=… on the thank-you step                    -> Purchase (pixel; the server sends its twin)
 //   FunnelBridge.appLink(deepLink)         deep link carrying the access token for the app
+//   FunnelBridge.track('step_view', { step, index })   funnel analytics: call on every step render
 //   FunnelBridge.state / save(patch)       answers and funnel state in sessionStorage
 (function () {
   var cfg = window.FUNNEL || {};
@@ -97,10 +98,18 @@
     save({ access: params.get('access') });
   }
 
+  // Funnel analytics (server logs -> BigQuery -> /analytics). QA sessions opened with demo answers are skipped.
+  function track(event, data) {
+    if (state.demo) return;
+    var body = { event: event, session_id: state.session, utm: state.utm || {} };
+    for (var k in data) body[k] = data[k];
+    post('/api/events', body).catch(function () {});
+  }
+
   function appLink(deepLink) {
     if (!deepLink || !state.access) return deepLink || '';
     return deepLink + (deepLink.indexOf('?') < 0 ? '?' : '&') + 'token=' + encodeURIComponent(state.access);
   }
 
-  window.FunnelBridge = { state: state, save: save, registration: registration, checkout: checkout, appLink: appLink };
+  window.FunnelBridge = { state: state, save: save, registration: registration, checkout: checkout, appLink: appLink, track: track };
 })();

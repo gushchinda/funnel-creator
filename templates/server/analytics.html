@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Funnel analytics</title>
+<style>
+  /* Served by the funnel server at /analytics (password protected). Data: /api/analytics. */
+  :root {
+    --bg: #f7f6f3; --panel: #ffffff; --line: #e4e1da; --fg: #22201c; --muted: #77716a; --bar: #2f5d50; --bar-2: #c9ddd5;
+    --drop: #b5462f; --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151614; --panel: #1d1f1c; --line: #30332f; --fg: #ecebe6; --muted: #9a978f; --bar: #6fb39c; --bar-2: #2c4a40; --drop: #ef8a72; color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--font); }
+  main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 60px; }
+  header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -.01em; }
+  h1 small { display: block; font-size: 13px; font-weight: 500; color: var(--muted); font-family: var(--mono); }
+  h2 { font-size: 15px; margin: 0 0 12px; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  select, button { font: inherit; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+  button { cursor: pointer; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .kpi small { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .kpi b { font-size: 24px; font-variant-numeric: tabular-nums; }
+  .kpi span { display: block; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; min-width: 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid2 .panel { margin-bottom: 0; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+  th { color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  th:first-child, td:first-child { text-align: left; }
+  tr:last-child td { border-bottom: 0; }
+  td.step { font-family: var(--mono); font-size: 13px; }
+  td.barcell { width: 40%; min-width: 140px; }
+  .bar { position: relative; height: 16px; background: var(--bar-2); border-radius: 4px; overflow: hidden; }
+  .bar i { position: absolute; inset: 0 auto 0 0; background: var(--bar); }
+  .drop { color: var(--drop); }
+  .muted { color: var(--muted); }
+  .note { color: var(--muted); font-size: 13px; }
+  .empty { padding: 32px 16px; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Funnel analytics <small id="funnel"></small></h1>
+    <div class="controls">
+      <label for="days" hidden>Period</label>
+      <select id="days">
+        <option value="1">Last 24 hours</option>
+        <option value="7" selected>Last 7 days</option>
+        <option value="30">Last 30 days</option>
+        <option value="90">Last 90 days</option>
+      </select>
+      <label for="source" hidden>Traffic source</label>
+      <select id="source"><option value="">All sources</option></select>
+      <button id="reload" type="button">Refresh</button>
+    </div>
+  </header>
+  <div id="out"><div class="empty">Loading…</div></div>
+  <p class="note">A visitor is one funnel session. Steps count sessions that saw the step at least once. QA sessions opened with demo answers (<code>?step=</code> links) are not counted. Data arrives within about a minute.</p>
+</main>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+  if (params.get('days')) $('days').value = params.get('days');
+  var knownSources = {};
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function n(v) { return Number(v || 0).toLocaleString('en-US'); }
+  function pct(a, b) { return b ? (a / b * 100).toFixed(1) + '%' : '–'; }
+  var money = function (cents) { return (Number(cents || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+
+  function load() {
+    var q = '?days=' + $('days').value + '&source=' + encodeURIComponent($('source').value);
+    history.replaceState(null, '', q);
+    $('out').innerHTML = '<div class="empty">Loading…</div>';
+    fetch('/api/analytics' + q, { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(render)
+      .catch(function () { $('out').innerHTML = '<div class="empty">Could not load the data. Check the server logs for analytics_error.</div>'; });
+  }
+
+  function render(d) {
+    if (d.error) return ($('out').innerHTML = '<div class="empty">The query failed. Check the server logs for analytics_error.</div>');
+    if (d.empty) return ($('out').innerHTML = '<div class="empty">No events yet. Open the funnel once, then refresh in a minute.<br>If this stays empty, run scripts/setup_analytics.sh for this project.</div>');
+    $('funnel').textContent = d.funnel;
+    var t = d.totals, cur = t.currency ? ' ' + t.currency : '';
+    d.sources.forEach(function (s) { knownSources[s.source] = 1; });
+    var sel = $('source'), current = sel.value;
+    sel.innerHTML = '<option value="">All sources</option>' + Object.keys(knownSources).sort().map(function (s) {
+      return '<option' + (s === current ? ' selected' : '') + ' value="' + esc(s) + '">' + esc(s) + '</option>';
+    }).join('');
+
+    var kpis = [
+      ['Visitors', n(t.visitors), ''],
+      ['Emails', n(t.leads), pct(t.leads, t.visitors) + ' of visitors'],
+      ['Started checkout', n(t.checkouts), pct(t.checkouts, t.leads) + ' of emails'],
+      ['Purchases', n(t.purchases), pct(t.purchases, t.checkouts) + ' of checkouts'],
+      ['Conversion', pct(t.purchases, t.visitors), 'visitor → purchase'],
+      ['Revenue' + cur, money(t.revenue), t.purchases ? money(t.revenue / t.purchases) + ' per purchase' : 'first payments only'],
+    ];
+    var top = d.steps.length ? d.steps[0].sessions : t.visitors;
+    var rows = d.steps.map(function (s, i) {
+      var prev = i ? d.steps[i - 1].sessions : s.sessions;
+      var lost = prev - s.sessions;
+      return '<tr><td class="step">' + esc(s.step) + '</td><td>' + n(s.sessions) + '</td><td class="barcell"><div class="bar"><i style="width:' + (top ? s.sessions / top * 100 : 0) + '%"></i></div></td>' +
+        '<td>' + pct(s.sessions, top) + '</td><td class="' + (lost > 0 ? 'drop' : 'muted') + '">' + (i ? (lost > 0 ? '−' + n(lost) + ' (' + pct(lost, prev) + ')' : '0') : '') + '</td></tr>';
+    });
+    [['email entered', t.leads], ['checkout started', t.checkouts], ['purchased', t.purchases]].forEach(function (m) {
+      rows.push('<tr><td><b>' + m[0] + '</b></td><td>' + n(m[1]) + '</td><td class="barcell"><div class="bar"><i style="width:' + (top ? m[1] / top * 100 : 0) + '%"></i></div></td><td>' + pct(m[1], top) + '</td><td></td></tr>');
+    });
+
+    $('out').innerHTML =
+      '<div class="kpis">' + kpis.map(function (k) { return '<div class="kpi"><small>' + k[0] + '</small><b>' + k[1] + '</b><span>' + k[2] + '</span></div>'; }).join('') + '</div>' +
+      '<div class="panel"><h2>Step by step</h2><div class="scroll"><table><thead><tr><th>Step</th><th>Sessions</th><th></th><th>Of first step</th><th>Lost from previous</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div></div>' +
+      '<div class="grid2">' +
+      '<div class="panel"><h2>Plans</h2><div class="scroll"><table><thead><tr><th>Plan</th><th>Checkouts</th><th>Purchases</th><th>Rate</th><th>Revenue</th></tr></thead><tbody>' +
+      (d.plans.length ? d.plans.map(function (p) { return '<tr><td>' + esc(p.plan) + '</td><td>' + n(p.checkouts) + '</td><td>' + n(p.purchases) + '</td><td>' + pct(p.purchases, p.checkouts) + '</td><td>' + money(p.revenue) + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="muted">No checkouts yet</td></tr>') +
+      '</tbody></table></div></div>' +
+      '<div class="panel"><h2>Traffic sources (utm_source)</h2><div class="scroll"><table><thead><tr><th>Source</th><th>Visitors</th><th>Emails</th><th>Purchases</th><th>Conv.</th><th>Revenue</th></tr></thead><tbody>' +
+      d.sources.map(function (s) { return '<tr><td>' + esc(s.source) + '</td><td>' + n(s.visitors) + '</td><td>' + n(s.leads) + '</td><td>' + n(s.purchases) + '</td><td>' + pct(s.purchases, s.visitors) + '</td><td>' + money(s.revenue) + '</td></tr>'; }).join('') +
+      '</tbody></table></div></div></div>' +
+      '<div class="panel" style="margin-top:16px"><h2>By day</h2><div class="scroll"><table><thead><tr><th>Day (UTC)</th><th>Visitors</th><th>Purchases</th><th>Conv.</th></tr></thead><tbody>' +
+      d.daily.slice().reverse().map(function (r) { return '<tr><td>' + esc(r.day) + '</td><td>' + n(r.visitors) + '</td><td>' + n(r.purchases) + '</td><td>' + pct(r.purchases, r.visitors) + '</td></tr>'; }).join('') +
+      '</tbody></table></div></div>';
+  }
+
+  $('days').onchange = load;
+  $('source').onchange = load;
+  $('reload').onclick = load;
+  if (params.get('source')) { knownSources[params.get('source')] = 1; $('source').innerHTML += '<option selected value="' + esc(params.get('source')) + '">' + esc(params.get('source')) + '</option>'; }
+  load();
+})();
+</script>
+</body>
+</html>

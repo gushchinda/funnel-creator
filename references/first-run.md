@@ -5,9 +5,9 @@ at most five numbered questions, each with a default the user can accept with "o
 reference (plan structure, currency, language, timer, guarantee). Questions marked ● block the build; ○ can arrive
 later: build with a placeholder and list them as open in the report. Skip any question the user already answered.
 
-**Accounts the user does not have yet.** In Blocks B and C first ask *which* of these the user already has:
+**Accounts the user does not have yet.** In Blocks B, C and E first ask *which* of these the user already has:
 Google Cloud project with a service-account key, Stripe or Paddle test keys, Meta Pixel with a CAPI token, fal.ai
-key. For everything they lack, or if they ask, switch to `references/setup-guide.md` and walk them through it one
+key, an email service key. For everything they lack, or if they ask, switch to `references/setup-guide.md` and walk them through it one
 account at a time before continuing. Keep working on the parts that do not need the missing keys meanwhile
 (capture, config, developer spec, front end).
 
@@ -53,12 +53,25 @@ account at a time before continuing. Keep working on the parts that do not need 
 2. ● Does the app have its own backend? If yes, the backend calls the subscription API with the server key and can
    receive push webhooks. If no, the app uses the per-user access token flow.
 3. ○ Who integrates on the app side (name / contact), so the spec can be addressed to them.
+4. ● Which subscription service decides premium in the app: Adapty, RevenueCat, Apphud, another one, or the
+   app's own backend? (Default: ask; never assume none.) For a service, the funnel hands each purchase to it
+   (`references/app-services.md`): name the key it needs (`ADAPTY_SECRET_KEY`, `REVENUECAT_STRIPE_PUBLIC_KEY`)
+   and the dashboard steps the user does themselves.
+5. ● Which id the app gives that service's SDK: the `?uid=` the app opens the funnel with, or the email? (Default:
+   uid if the app opens the funnel, else email.)
+
+## Block E — welcome email
+
+1. ● Send a welcome email after purchase? (Default: yes; `references/email.md`.) Email service: Resend
+   (default), Postmark or SendGrid; the key goes into `EMAIL_API_KEY`.
+2. ● Sender name and address (`EMAIL_FROM`), on a domain the user can verify in the email service.
+3. ○ Support address shown in the email (`product.legal.support_email`) and subject line, if not the default.
 
 ## After the answers
 
 1. Write `funnel.config.json` (schema below) and `.env.example`. Add `.env` to `.gitignore`.
 2. Fill `templates/developer-spec.md` into `docs/developer-spec.md` with the funnel's base URL placeholder,
-   provider, identity mode and plan ids. Send it to the user with one line: "forward this to your app developer".
+   provider, identity mode, subscription service block and plan ids. Send it to the user with one line: "forward this to your app developer".
 3. **Clone plan (phase 3).** Show the user, in one message or page: a table `reference step → clone step → what
    changes` for every step, the paywall (plans, prices, timer, guarantee), and the pixel events with the step
    that fires each. Ask "build it?". Start phase 4 only after the user says go.
@@ -119,7 +132,9 @@ secret names for the deploy.
   "images": { "provider": "fal", "env": "FAL_KEY" },
   "gcp": { "project": "my-gcp-project", "region": "us-central1", "service": "acme-sleep-men", "auth_env": "GCLOUD_KEY_JSON",
            "secrets": { "STRIPE_SECRET_KEY": "acme-stripe-secret-key" } },
-  "app": { "identity": "email", "has_backend": true, "developer_contact": "" },
+  "app": { "identity": "email", "has_backend": true, "developer_contact": "",
+           "service": "adapty", "user_id_from": "uid", "service_env": "ADAPTY_SECRET_KEY" },
+  "email": { "provider": "resend", "from": "Acme Sleep <hello@acmesleep.com>", "env": "EMAIL_API_KEY" },
   "status": { "phase": 0, "test_url": "", "open_items": [] }
 }
 ```

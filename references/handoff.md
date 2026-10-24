@@ -4,7 +4,8 @@
 
 One self-contained HTML page (inline CSS, images next to it in `report/`), readable on a phone. Sections:
 
-1. **Summary**: what was built, test URL, direct paywall link (`?go=paywall`), provider and mode (test/live).
+1. **Summary**: what was built, test URL, direct paywall link (`?go=paywall`), provider and mode (test/live),
+   analytics dashboard link (`/analytics`) and where its password is (Secret Manager page, never the password).
 2. **Reference**: name and URL of the cloned funnel, date captured, number of steps; what was deliberately
    changed (rebrand, skipped or added steps, replaced claims).
 3. **Side by side**: for every step a row with the reference screenshot and the clone screenshot at the same size,
@@ -55,6 +56,8 @@ them or their client. Then update `funnel.config.json → status`.
 - [ ] Payments: test purchase, 3-D Secure, webhook received, metadata correct
 - [ ] Pixel + CAPI: `CompleteRegistration` and `Purchase` deduplicated in Test events
 - [ ] Subscription API: `has_access: true` for the test buyer; developer spec sent
+- [ ] Welcome email received for the test purchase, screenshot in the report; sender domain verified (or open item)
+- [ ] Subscription service (Adapty / RevenueCat / Apphud): test purchase on the right profile, or "none" recorded
 - [ ] Test deploy on Cloud Run passed the smoke test
 - [ ] Domain instructions delivered
 - [ ] Open items listed with owners

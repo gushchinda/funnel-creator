@@ -20,6 +20,30 @@ handled by {{PROVIDER}}; the funnel server reads subscription state from {{PROVI
 
 {{IDENTITY_SECTION}}
 
+{{SERVICE_SECTION}}
+
+<!-- Pick one service block when filling the template (app.service), delete the others. -->
+<!-- adapty:
+**Adapty.** Every web purchase is also recorded in Adapty on the profile whose `customer_user_id` is
+{{SERVICE_USER_ID}}. Call `Adapty.identify("<that id>")` after sign-in; the access level unlocks through the
+usual `getProfile()` check, no extra code for web purchases. Sections 3 and 4 stay available as a fallback and
+for support. Stripe products are added to Adapty → Products and linked to the access level.
+-->
+<!-- revenuecat:
+**RevenueCat.** Every web purchase is also posted to RevenueCat for the App User ID {{SERVICE_USER_ID}}. Call
+`Purchases.logIn("<that id>")` after sign-in; the entitlement unlocks through the usual `customerInfo` check.
+Sections 3 and 4 stay available as a fallback and for support.
+-->
+<!-- apphud:
+**Apphud.** The Stripe customer carries `apphud_user_id` = {{SERVICE_USER_ID}}, and Apphud's Stripe integration
+records the purchase on that user. Start the SDK with that user id; premium unlocks through the usual
+`hasPremiumAccess()` check. Sections 3 and 4 stay available as a fallback and for support.
+-->
+
+After payment the buyer also gets a welcome email with an "Open {{APP_NAME}}" button. It goes to
+`{{BASE_URL}}/open/<access token>`, which opens `{{DEEP_LINK}}?token=<access token>` (the same token as above)
+or the store if the app is not installed.
+
 <!-- Pick one block when filling the template, delete the others. -->
 <!-- email:
 The person enters the same email in the app that they used in the funnel. Verify that they own it (send a
@@ -35,7 +59,7 @@ purchase to the account without asking for an email.
 After payment the funnel's thank-you screen opens `{{DEEP_LINK}}?token=<access token>`. Store the token in
 secure storage (Keychain / EncryptedSharedPreferences) and call `GET /v1/me` with it. The token does not expire;
 it only gives read access to this person's subscription and the manage page.
-If the app is not installed yet, the button opens the store; the same link is in the welcome email, so the
+If the app is not installed yet, the button opens the store; the welcome email has the same link, so the
 person can open it after installing.
 -->
 

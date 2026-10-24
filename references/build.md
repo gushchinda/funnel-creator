@@ -51,6 +51,8 @@ Renderer rules:
   reference (prices go up, or the discount badge disappears).
 - Set `window.FUNNEL = { slug: "<funnel slug>" }` before loading the bridge, and keep quiz answers in
   `FunnelBridge.save({ answers })` so they reach the lead log.
+- Call `FunnelBridge.track('step_view', { step: step.id, index })` after every step render, and set
+  `FunnelBridge.save({ demo: true })` when `?step=` fills demo answers (see `references/analytics.md`).
 - Call the bridge at the two moments that matter:
   `FunnelBridge.registration(email)` when the email step is submitted, and
   `FunnelBridge.checkout(planId)` when the paywall CTA is pressed. The bridge handles pixel, CAPI and redirect.
@@ -86,7 +88,8 @@ scripts write. The server:
 - `POST /api/checkout` → signed pay token, CAPI `InitiateCheckout`, returns the pay page URL;
 - Stripe or Paddle routes and webhook (chosen by `PAYMENT_PROVIDER`);
 - `/v1/*` subscription API for the app;
-- `/healthz`.
+- `POST /api/events` and the `/analytics` dashboard (`references/analytics.md`);
+- `/health` (also `/healthz`, which run.app swallows at its front end).
 
 Do not add a database unless the funnel needs one: subscription state is read from the payment provider, and
 quiz answers are logged as structured JSON (Cloud Logging) and attached to the provider's metadata.

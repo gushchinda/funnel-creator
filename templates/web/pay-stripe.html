@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>Checkout</title>
+  <!-- PIXEL: paste the same Meta Pixel base code as index.html here -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    /* Restyle with the funnel's tokens (web/styles.css variables) so checkout looks like the paywall. */
+    :root { --bg: #fff; --fg: #111; --muted: #6b6b6b; --accent: #111; --radius: 14px; --font: system-ui, -apple-system, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 var(--font); }
+    main { max-width: 440px; margin: 0 auto; padding: 24px 16px 40px; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    .terms { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+    .total { display: flex; justify-content: space-between; font-weight: 700; padding: 14px 0; border-top: 1px solid #eee; margin-top: 16px; }
+    button { width: 100%; margin-top: 16px; padding: 16px; border: 0; border-radius: var(--radius); background: var(--accent); color: #fff; font: 700 17px var(--font); cursor: pointer; }
+    button[disabled] { opacity: .5; cursor: default; }
+    .error { color: #c62828; font-size: 14px; min-height: 20px; margin-top: 10px; }
+    .fine { color: var(--muted); font-size: 12px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1 id="name">Your plan</h1>
+  <p class="terms" id="terms"></p>
+  <form id="form">
+    <div id="pe"></div>
+    <div class="total"><span>Total today</span><span id="today"></span></div>
+    <button id="pay" type="submit" disabled>Pay</button>
+    <div class="error" id="err" role="alert"></div>
+  </form>
+  <p class="fine" id="fine">Your subscription renews automatically until you cancel. Cancel anytime from the link in your receipt.</p>
+</main>
+<script>
+(async function () {
+  var token = location.pathname.split('/')[2];
+  var $ = function (id) { return document.getElementById(id); };
+  var fail = function (m) { $('err').textContent = m || 'Payment failed. Please try another card.'; $('pay').disabled = false; };
+  if (new URLSearchParams(location.search).get('failed')) fail('Payment was not completed. Please try again.');
+
+  var cfg = await fetch('/api/stripe/config/' + token).then(function (r) { return r.ok ? r.json() : null; });
+  if (!cfg) { location.href = '/'; return; }
+  var money = new Intl.NumberFormat(cfg.locale, { style: 'currency', currency: cfg.currency.toUpperCase() });
+  $('name').textContent = cfg.label;
+  $('terms').textContent = cfg.terms;
+  $('today').textContent = money.format(cfg.amount / 100);
+
+  var stripe = Stripe(cfg.publishableKey, { locale: cfg.locale });
+  var elements = stripe.elements({
+    mode: 'subscription', amount: cfg.amount, currency: cfg.currency,
+    appearance: { theme: 'stripe', variables: { borderRadius: '12px' } },
+  });
+  var pe = elements.create('payment', { defaultValues: { billingDetails: { email: cfg.email } }, layout: 'tabs' });
+  pe.mount('#pe');
+  pe.on('ready', function () { $('pay').disabled = false; });
+
+  $('form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    $('pay').disabled = true;
+    $('err').textContent = '';
+    var s = await elements.submit();
+    if (s.error) return fail(s.error.message);
+    var sub = await fetch('/api/stripe/subscribe/' + token, { method: 'POST' }).then(function (r) { return r.ok ? r.json() : null; });
+    if (!sub) return fail('Something went wrong. Please try again.');
+    var c = await stripe.confirmPayment({
+      elements: elements, clientSecret: sub.clientSecret, redirect: 'if_required',
+      confirmParams: { return_url: location.origin + '/pay/' + token + '/return?subscription=' + sub.subscriptionId },
+    });
+    if (c.error) return fail(c.error.message);
+    var done = await fetch('/api/stripe/complete/' + token, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subscriptionId: sub.subscriptionId }),
+    }).then(function (r) { return r.ok ? r.json() : null; });
+    if (!done || !done.paid) return fail('We could not confirm the payment yet. Please wait a minute and refresh.');
+    location.href = done.redirect;
+  });
+})();
+</script>
+</body>
+</html>

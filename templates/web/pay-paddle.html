@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>Checkout</title>
+  <!-- PIXEL: paste the same Meta Pixel base code as index.html here -->
+  <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+  <style>
+    /* Restyle with the funnel's tokens so checkout looks like the paywall. */
+    :root { --bg: #fff; --fg: #111; --muted: #6b6b6b; --font: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 var(--font); }
+    main { max-width: 480px; margin: 0 auto; padding: 24px 16px 40px; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    .terms { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
+    .error { color: #c62828; font-size: 14px; min-height: 20px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1 id="name">Your plan</h1>
+  <p class="terms" id="terms"></p>
+  <div class="paddle-frame"></div>
+  <div class="error" id="err" role="alert"></div>
+</main>
+<script>
+(async function () {
+  var token = location.pathname.split('/')[2];
+  var $ = function (id) { return document.getElementById(id); };
+  var cfg = await fetch('/api/paddle/config/' + token).then(function (r) { return r.ok ? r.json() : null; });
+  if (!cfg) { location.href = '/'; return; }
+  $('name').textContent = cfg.label;
+  $('terms').textContent = cfg.terms;
+
+  async function completed(transactionId) {
+    for (var i = 0; i < 3; i++) {
+      var r = await fetch('/api/paddle/complete/' + token, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transactionId: transactionId }),
+      }).then(function (r) { return r.ok ? r.json() : null; });
+      if (r && r.paid) { location.href = r.redirect; return; }
+    }
+    $('err').textContent = 'Payment received. Confirming it is taking longer than usual: please wait a minute and refresh.';
+  }
+
+  if (cfg.env === 'sandbox') Paddle.Environment.set('sandbox');
+  Paddle.Initialize({
+    token: cfg.clientToken,
+    eventCallback: function (ev) {
+      if (ev.name === 'checkout.completed') completed(ev.data.transaction_id);
+      if (ev.name === 'checkout.error') $('err').textContent = 'Payment failed. Please try again.';
+    },
+  });
+  Paddle.Checkout.open({
+    items: cfg.items,
+    discountId: cfg.discountId || undefined,
+    customer: { email: cfg.email },
+    customData: cfg.customData,
+    settings: {
+      displayMode: 'inline', frameTarget: 'paddle-frame', frameInitialHeight: 450,
+      frameStyle: 'width:100%; min-width:312px; background-color:transparent; border:none;',
+      variant: 'one-page', locale: cfg.locale, theme: 'light', allowLogout: false, showAddDiscounts: false,
+    },
+  });
+})();
+</script>
+</body>
+</html>

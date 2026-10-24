@@ -1,6 +1,6 @@
 ---
 name: funnel-cloner
-description: Clone a reference web-to-app subscription funnel (quiz, onboarding, paywall) step by step and design for design, take payments with Stripe or Paddle, send Meta Pixel + Conversions API events, expose a subscription-status API for the mobile app, and deploy to Google Cloud Run. Works as a guided dialogue that starts by capturing and showing the competitor's funnel. Use when someone asks to copy, clone, rebuild or "make a funnel like" an existing quiz or paywall funnel.
+description: Clone a reference web-to-app subscription funnel (quiz, onboarding, paywall) step by step and design for design, take payments with Stripe or Paddle, send Meta Pixel + Conversions API events, expose a subscription-status API for the mobile app, track every step in a built-in analytics dashboard, and deploy to Google Cloud Run. Works as a guided dialogue that starts by capturing and showing the competitor's funnel. Use when someone asks to copy, clone, rebuild or "make a funnel like" an existing quiz or paywall funnel.
 ---
 
 # Funnel cloner
@@ -19,6 +19,9 @@ Cloud Run, with:
 - a delivery report with screenshots of reference vs clone, and step-by-step domain instructions.
 
 Everything specific to a user lives in their project folder and environment, never in this skill.
+
+The references, templates and scripts named below live in https://github.com/gushchinda/funnel-creator. If they
+are not next to this file, clone that repository (default branch) and work from the clone.
 
 ## How to work
 

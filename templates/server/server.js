@@ -56,7 +56,16 @@ app.disable("x-powered-by");
 // Webhooks need the raw body for signature checks, so JSON parsing skips them.
 app.use((req, res, next) => (req.path.startsWith("/webhooks/") ? next() : express.json({ limit: "64kb" })(req, res, next)));
 
-app.get("/healthz", (_req, res) => res.send("ok"));
+// run.app reserves /healthz at its front end, so /health is the one to probe on Cloud Run.
+app.get(["/healthz", "/health"], (_req, res) => res.send("ok"));
+
+// Plans for the paywall, so prices live only in funnel.config.json.
+app.get("/api/plans", (_req, res) => {
+  res.set("Cache-Control", "public, max-age=300").json({
+    currency: CURRENCY.toUpperCase(),
+    plans: Object.values(PLANS).map(({ id, label, terms, today, renew, period, intro }) => ({ id, label, terms, today, renew, period, intro })),
+  });
+});
 
 // Email submitted: CompleteRegistration, deduplicated with the browser pixel by event_id.
 app.post("/api/registration", (req, res) => {

@@ -46,6 +46,15 @@ export function stripeProvider(ctx) {
     }
     if (!paid) return { paid: false };
     const inv = sub.latest_invoice;
+    // Purchase also goes out here, so funnels without a webhook endpoint still report it. The webhook sends the
+    // same event_id, and Meta keeps one.
+    const m = sub.metadata;
+    capi.send({
+      event_name: "Purchase", event_id: `purchase_${sub.id}`, event_source_url: m.page || "",
+      user_data: capi.user({ email: tok.email, externalId: m.uid || m.funnel_session, fbp: m.fbp, fbc: m.fbc, ip: m.ip, ua: m.ua }),
+      custom_data: { currency: inv.currency.toUpperCase(), value: inv.amount_paid / 100, content_ids: [tok.plan], order_id: sub.id, funnel: m.funnel || funnel },
+    });
+    console.log(JSON.stringify({ kind: "purchase", provider: "stripe", sub: sub.id, plan: tok.plan, amount: inv.amount_paid, funnel: m.funnel, via: "complete" }));
     return {
       paid: true,
       redirect: success({

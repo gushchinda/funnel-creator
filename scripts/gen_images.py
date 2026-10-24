@@ -70,7 +70,8 @@ def main():
         out = spec_path.parent / item["file"]
         if a.only not in out.name or (out.exists() and not a.force):
             continue
-        prompt = f'{item["prompt"]}. {style}'.strip(". ")
+        # "style": false keeps the shared style line off items it does not fit (food, portraits, UGC-style photos).
+        prompt = item["prompt"] if item.get("style") is False else f'{item["prompt"]}. {style}'.strip(". ")
         print("->", out)
         img = generate(model, prompt, item.get("size", "square_hd"))
         if item.get("width") and item.get("height"):

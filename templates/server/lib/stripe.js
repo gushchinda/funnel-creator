@@ -10,7 +10,7 @@ const STATUS = {
 const iso = (s) => (s ? new Date(s * 1000).toISOString() : null);
 
 export function stripeProvider(ctx) {
-  const { env, plans, currency, source, funnel, capi, pay, success, meta, notify } = ctx;
+  const { env, plans, currency, source, funnel, capi, pay, success, meta, notify, track } = ctx;
   if (!env.STRIPE_SECRET_KEY) throw new Error("STRIPE_SECRET_KEY is required");
   const stripe = new Stripe(env.STRIPE_SECRET_KEY);
   const subsByToken = new Map(); // retries reuse the incomplete subscription instead of stacking new ones
@@ -55,6 +55,7 @@ export function stripeProvider(ctx) {
       custom_data: { currency: inv.currency.toUpperCase(), value: inv.amount_paid / 100, content_ids: [tok.plan], order_id: sub.id, funnel: m.funnel || funnel },
     });
     console.log(JSON.stringify({ kind: "purchase", provider: "stripe", sub: sub.id, plan: tok.plan, amount: inv.amount_paid, funnel: m.funnel, via: "complete" }));
+    track("purchase", { session: m.funnel_session, plan: tok.plan, amount: inv.amount_paid, currency: inv.currency, order: sub.id });
     return {
       paid: true,
       redirect: success({
@@ -167,6 +168,7 @@ export function stripeProvider(ctx) {
           custom_data: { currency: o.currency.toUpperCase(), value: o.amount_paid / 100, content_ids: [m.plan], order_id: sub.id, funnel: m.funnel || funnel },
         });
         console.log(JSON.stringify({ kind: "purchase", provider: "stripe", sub: sub.id, plan: m.plan, amount: o.amount_paid, funnel: m.funnel }));
+        track("purchase", { session: m.funnel_session, plan: m.plan, amount: o.amount_paid, currency: o.currency, order: sub.id });
       }
       return notify(sub.customer, o.customer_email);
     }

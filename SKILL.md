@@ -14,6 +14,8 @@ Cloud Run, with:
 - **Meta Pixel + Conversions API**: `CompleteRegistration` and `Purchase` (plus `InitiateCheckout`), browser and
   server with a shared `event_id` so Meta deduplicates them;
 - a **subscription status API** the mobile app calls to unlock access, and a spec for the app developer;
+- **funnel analytics**: every step, email, checkout and purchase per session, in BigQuery, with a
+  password-protected dashboard at `/analytics` (conversion by step, plan and traffic source);
 - a delivery report with screenshots of reference vs clone, and step-by-step domain instructions.
 
 Everything specific to a user lives in their project folder and environment, never in this skill.
@@ -32,7 +34,7 @@ Run the phases in order. Each phase has a reference file; read it when you reach
 | 5 | Payments | `references/stripe.md` or `references/paddle.md` | products/prices, checkout, webhook |
 | 6 | Pixel + CAPI | `references/meta-capi.md` | events verified in Test Events |
 | 7 | Subscription API + app spec | `references/subscription-api.md` | `/v1/*` endpoints, `<funnel>/docs/developer-spec.md` |
-| 8 | Test deploy to Cloud Run | `references/deploy.md` | live test URL, smoke test passed |
+| 8 | Test deploy to Cloud Run + analytics | `references/deploy.md`, `references/analytics.md` | live test URL, smoke test passed, `/analytics` shows the test walk |
 | 9 | Hand-off | `references/handoff.md` | report with screenshots, domain instructions |
 
 Keep a checklist of these phases visible to the user and update it as you go.
@@ -118,6 +120,10 @@ browser and server, same `event_id`. Details and verification in `references/met
 **Never in git, reports or chat:** API keys, webhook secrets, CAPI tokens, service account keys, admin passwords,
 customer emails. Run `scripts/check_secrets.sh <funnel>` before every commit and before sharing a report.
 
+**Analytics.** Every funnel tracks every step (`FunnelBridge.track`) and ships the `/analytics` dashboard. Run
+`scripts/setup_analytics.sh` once per Google Cloud project and keep the dashboard password in Secret Manager.
+Hand the user the dashboard link with the test deploy.
+
 **Deploy.** Every funnel gets a test deploy to the user's Cloud Run before hand-off. The hand-off always includes
 step-by-step domain mapping instructions written for a non-technical person (`templates/domain-instructions.md`).
 
@@ -138,13 +144,14 @@ references/
   meta-capi.md                   events, dedup, user_data, Test Events check
   subscription-api.md            endpoints, access rules, linking purchases to app users
   deploy.md                      Cloud Run deploy, env and secrets, smoke test
+  analytics.md                   funnel events, BigQuery sink, /analytics dashboard
   handoff.md                     report, screenshots, domain instructions, final checklist
 templates/
   funnel.config.example.json
   env.example
   developer-spec.md              spec for the app developer (filled per funnel)
   domain-instructions.md         domain mapping guide for the client
-  server/                        Express server: payments, CAPI, subscription API
+  server/                        Express server: payments, CAPI, subscription API, analytics + dashboard
   web/funnel-bridge.js           session, pixel events, checkout start (include in every page)
   web/pay-stripe.html            on-site Stripe payment page
   web/pay-paddle.html            Paddle inline checkout page
@@ -155,5 +162,6 @@ scripts/
   setup_stripe.mjs               create products, prices, coupons, webhook endpoint
   setup_paddle.mjs               create products, prices, discounts, notification destination
   deploy.sh                      Cloud Run deploy of one or more funnel folders
+  setup_analytics.sh             BigQuery dataset + log sink + roles for funnel analytics (once per project)
   check_secrets.sh               refuse to commit or share anything that looks like a key
 ```

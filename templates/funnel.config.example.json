@@ -6,7 +6,9 @@
     "url": "https://example.com/quiz",
     "name": "Example Sleep quiz",
     "owned_by_user": false,
-    "changes": ["skip step 14 (newsletter opt-in)"]
+    "changes": [
+      "skip step 14 (newsletter opt-in)"
+    ]
   },
   "product": {
     "name": "Acme Sleep",
@@ -15,25 +17,84 @@
       "android": "https://play.google.com/store/apps/details?id=com.example.app",
       "deep_link": "acmesleep://funnel-success"
     },
-    "legal": { "privacy": "", "terms": "", "support_email": "" }
+    "legal": {
+      "privacy": "",
+      "terms": "",
+      "support_email": ""
+    }
   },
   "payments": {
     "provider": "stripe",
     "currency": "usd",
     "plans": [
-      { "id": "week",  "label": "1-week plan",  "terms": "$4.99 today, then $44 every 4 weeks",
-        "today": 499,  "renew": 4400, "period": "4w",  "intro": "trial_7d_plus_fee" },
-      { "id": "month", "label": "4-week plan",  "terms": "$9.99 today, then $44 every 4 weeks",
-        "today": 999,  "renew": 4400, "period": "4w",  "intro": "first_invoice_discount" },
-      { "id": "year",  "label": "12-week plan", "terms": "$19.99 today, then $79 every 12 weeks",
-        "today": 1999, "renew": 7900, "period": "12w", "intro": "first_invoice_discount" }
+      {
+        "id": "week",
+        "label": "1-week plan",
+        "terms": "$4.99 today, then $44 every 4 weeks",
+        "today": 499,
+        "renew": 4400,
+        "period": "4w",
+        "intro": "trial_7d_plus_fee"
+      },
+      {
+        "id": "month",
+        "label": "4-week plan",
+        "terms": "$9.99 today, then $44 every 4 weeks",
+        "today": 999,
+        "renew": 4400,
+        "period": "4w",
+        "intro": "first_invoice_discount"
+      },
+      {
+        "id": "year",
+        "label": "12-week plan",
+        "terms": "$19.99 today, then $79 every 12 weeks",
+        "today": 1999,
+        "renew": 7900,
+        "period": "12w",
+        "intro": "first_invoice_discount"
+      }
     ],
-    "env": { "secret": "STRIPE_SECRET_KEY", "publishable": "STRIPE_PUBLISHABLE_KEY", "webhook_secret": "STRIPE_WEBHOOK_SECRET" }
+    "env": {
+      "secret": "STRIPE_SECRET_KEY",
+      "publishable": "STRIPE_PUBLISHABLE_KEY",
+      "webhook_secret": "STRIPE_WEBHOOK_SECRET"
+    }
   },
-  "meta": { "env": { "pixel_id": "META_PIXEL_ID", "capi_token": "META_CAPI_TOKEN", "test_code": "META_TEST_EVENT_CODE" } },
-  "images": { "provider": "fal", "env": "FAL_KEY" },
-  "gcp": { "project": "my-gcp-project", "region": "us-central1", "service": "acme-sleep-men", "auth_env": "GCLOUD_KEY_JSON",
-           "secrets": { "STRIPE_SECRET_KEY": "acme-stripe-secret-key" } },
-  "app": { "identity": "email", "has_backend": true, "developer_contact": "" },
-  "status": { "phase": 0, "test_url": "", "open_items": [] }
+  "meta": {
+    "env": {
+      "pixel_id": "META_PIXEL_ID",
+      "capi_token": "META_CAPI_TOKEN",
+      "test_code": "META_TEST_EVENT_CODE"
+    }
+  },
+  "images": {
+    "provider": "fal",
+    "env": "FAL_KEY"
+  },
+  "gcp": {
+    "project": "my-gcp-project",
+    "region": "us-central1",
+    "service": "acme-sleep-men",
+    "auth_env": "GCLOUD_KEY_JSON",
+    "secrets": {
+      "STRIPE_SECRET_KEY": "acme-stripe-secret-key",
+      "ANALYTICS_PASSWORD": "acme-sleep-men-analytics-password"
+    }
+  },
+  "analytics": {
+    "dataset": "funnel_analytics",
+    "dashboard": "/analytics",
+    "password_env": "ANALYTICS_PASSWORD"
+  },
+  "app": {
+    "identity": "email",
+    "has_backend": true,
+    "developer_contact": ""
+  },
+  "status": {
+    "phase": 0,
+    "test_url": "",
+    "open_items": []
+  }
 }

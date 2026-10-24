@@ -36,6 +36,8 @@ For each folder it builds from source (`gcloud run deploy <service> --source <fo
 
 ## After the first deploy
 
+0. Analytics: `scripts/setup_analytics.sh <funnel-folder>` once per project, then the dashboard password in
+   Secret Manager mapped as `ANALYTICS_PASSWORD` (`references/analytics.md`), and redeploy.
 1. Create the payment webhook for the service URL (`setup_stripe.mjs --webhook …` or `setup_paddle.mjs --webhook
    …`), put the secret in env, redeploy.
 2. Stripe: register the `run.app` host in Payment method domains so wallets show up.
@@ -52,6 +54,7 @@ On a 375×812 viewport, from the landing URL with `?utm_source=test`:
 - the provider shows the customer and subscription with funnel metadata;
 - `GET /v1/subscription?email=<test email>` returns `has_access: true`; `/v1/me` works with the token from the
   thank-you link; `/manage/<token>` opens the provider page;
+- `/analytics` asks for a password and, after a walk with `?utm_source=qa_check`, shows those sessions step by step;
 - `/health` is `ok` (not `/healthz`: run.app answers that path itself with a 404); logs show no errors.
 
 Save clone screenshots of every step to `report/clone/` during this pass.

@@ -9,6 +9,7 @@ import { tokens } from "./lib/tokens.js";
 import { stripeProvider } from "./lib/stripe.js";
 import { paddleProvider } from "./lib/paddle.js";
 import { subscriptionApi } from "./lib/subscriptions.js";
+import { analytics } from "./lib/analytics.js";
 
 const env = process.env;
 const WEB = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "web");
@@ -34,6 +35,7 @@ const meta = (tok) => Object.fromEntries(Object.entries({
 }).filter(([, v]) => v));
 
 let subs; // created after the provider; providers call notify() lazily
+let stats; // funnel analytics, created with the app; providers call track() lazily
 const success = ({ id, plan, value, currency, customerId, email, uid }) => {
   const u = new URL(THANK_YOU, "http://x");
   u.searchParams.set("paid", id);
@@ -46,7 +48,7 @@ const success = ({ id, plan, value, currency, customerId, email, uid }) => {
 
 const ctx = {
   env, plans: PLANS, currency: CURRENCY, source: SOURCE, sources: SOURCES, funnel: FUNNEL,
-  capi, pay: payToken, meta, success, notify: (...a) => subs.notify(...a),
+  capi, pay: payToken, meta, success, notify: (...a) => subs.notify(...a), track: (...a) => stats.log(...a),
 };
 const provider = env.PAYMENT_PROVIDER === "paddle" ? paddleProvider(ctx) : stripeProvider(ctx);
 
@@ -57,6 +59,8 @@ app.disable("x-powered-by");
 app.use((req, res, next) => (req.path.startsWith("/webhooks/") ? next() : express.json({ limit: "64kb" })(req, res, next)));
 
 // run.app reserves /healthz at its front end, so /health is the one to probe on Cloud Run.
+stats = analytics({ app, env, funnel: FUNNEL });
+
 app.get(["/healthz", "/health"], (_req, res) => res.send("ok"));
 
 // Plans for the paywall, so prices live only in funnel.config.json.
@@ -73,6 +77,7 @@ app.post("/api/registration", (req, res) => {
   const email = str(b.email).trim();
   if (!email.includes("@") || !/^reg_[\w-]{4,80}$/.test(b.event_id || "")) return res.status(400).json({ error: "bad_request" });
   console.log(JSON.stringify({ kind: "lead", funnel: FUNNEL, session: b.session_id, answers: b.answers, utm: b.utm }));
+  stats.log("lead", { session: str(b.session_id, 80), utm: b.utm });
   capi.send({
     event_name: "CompleteRegistration", event_id: b.event_id, event_source_url: str(b.page_url, 400),
     user_data: capi.user({ email, externalId: str(b.uid) || str(b.session_id), fbp: str(b.fbp), fbc: str(b.fbc), ip: clientIp(req), ua: req.get("user-agent") }),
@@ -92,6 +97,7 @@ app.post("/api/checkout", (req, res) => {
     utm: b.utm && typeof b.utm === "object" ? { source: str(b.utm.source, 100), campaign: str(b.utm.campaign, 100), content: str(b.utm.content, 100) } : undefined,
   };
   const value = PLANS[plan].today / 100;
+  stats.log("checkout", { session: tok.session, plan, amount: PLANS[plan].today, currency: CURRENCY, utm: tok.utm });
   capi.send({
     event_name: "InitiateCheckout", event_id: `ic_${tok.session}_${plan}`, event_source_url: tok.page,
     user_data: capi.user({ email, externalId: tok.uid || tok.session, fbp: tok.fbp, fbc: tok.fbc, ip: tok.ip, ua: tok.ua }),
